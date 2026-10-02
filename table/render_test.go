@@ -2023,3 +2023,44 @@ func TestTable_Render_AutoIndex_EdgeCases(t *testing.T) {
 		tw.Render()
 	})
 }
+
+func TestTable_Render_AutoMerge_EdgeCases(t *testing.T) {
+	// AutoMerge with cell wider than columns should not panic (issue #426)
+	assert.NotPanics(t, func() {
+		tw := NewWriter()
+		tw.AppendHeader(Row{"abc", "def"})
+		tw.AppendRow(Row{"12345678", "12345678"}, RowConfig{AutoMerge: true})
+		out := tw.Render()
+		assert.NotEmpty(t, out)
+	})
+
+	// AutoMerge with zero visible columns should not panic
+	assert.NotPanics(t, func() {
+		tw := NewWriter()
+		tw.AppendHeader(Row{"A", "B"})
+		tw.AppendRow(Row{"1", "1"}, RowConfig{AutoMerge: true})
+		tw.SetColumnConfigs([]ColumnConfig{
+			{Number: 1, Hidden: true},
+			{Number: 2, Hidden: true},
+		})
+		out := tw.Render()
+		assert.Empty(t, out)
+	})
+
+	// AutoMerge with empty rows should not panic
+	assert.NotPanics(t, func() {
+		tw := NewWriter()
+		tw.AppendRow(Row{}, RowConfig{AutoMerge: true})
+		out := tw.Render()
+		assert.Empty(t, out)
+	})
+
+	// AutoMerge with suppressed empty columns resulting in zero visible columns
+	assert.NotPanics(t, func() {
+		tw := NewWriter()
+		tw.AppendRow(Row{"", ""}, RowConfig{AutoMerge: true})
+		tw.SuppressEmptyColumns()
+		out := tw.Render()
+		assert.Empty(t, out)
+	})
+}

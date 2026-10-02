@@ -91,6 +91,9 @@ func (t *Table) extractMaxColumnLengthsFromRow(row rowStr, mci mergedColumnIndic
 // and within that set from the highest start index to the lowest. It
 // distributes the length across the columns not already exceeding the average.
 func (t *Table) reBalanceMaxMergedColumnLengths() {
+	if t.numColumns <= 0 || len(t.maxColumnLengths) == 0 {
+		return
+	}
 	endIndexKeys, startIndexKeysMap := getSortedKeys(t.maxMergedColumnLengths)
 	middleSepLen := text.StringWidthWithoutEscSequences(t.style.Box.MiddleSeparator)
 	for _, endIndexKey := range endIndexKeys {
@@ -112,7 +115,10 @@ func (t *Table) reBalanceMaxMergedColumnLengths() {
 					break
 				}
 				numMergedColumns := len(columnBalanceMap)
-				maxLengthSplitAcrossColumns := mergedColumnLength / numMergedColumns
+				if numMergedColumns <= 0 {
+					break
+				}
+				maxLengthSplitAcrossColumns := (mergedColumnLength + numMergedColumns - 1) / numMergedColumns
 				mapReduced := false
 				for mergedColumn := range columnBalanceMap {
 					maxColumnLength := t.maxColumnLengths[mergedColumn]
@@ -142,6 +148,9 @@ func (t *Table) reBalanceMaxMergedColumnLengths() {
 				columnLengthRemaining := mergedColumnLength
 				columnsRemaining := numRebalancedColumns
 				for index := 0; index < numRebalancedColumns; index++ {
+					if columnsRemaining <= 0 {
+						break
+					}
 					balancedSpace := columnLengthRemaining / columnsRemaining
 					balanceColumn := balanceColumns[index]
 					t.maxColumnLengths[balanceColumn] += balancedSpace
